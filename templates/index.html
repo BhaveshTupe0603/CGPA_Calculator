@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGPA Calculator | B.E CSE R2023</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .accordion-content { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
+        .accordion-content.open { max-height: 2000px; opacity: 1; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <div id="authOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100">
+            <div class="text-center mb-6">
+                <div class="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600 text-2xl">
+                    <i class="fa-solid fa-university"></i>
+                </div>
+                <h2 id="authTitle" class="text-2xl font-bold text-slate-800">Student Login</h2>
+                <p class="text-slate-500 text-sm mt-1">Enter your details to continue</p>
+            </div>
+            
+            <div class="space-y-4">
+                <div id="nameField" class="hidden">
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Full Name</label>
+                    <input type="text" id="name" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="e.g. John Doe">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Register Number</label>
+                    <input type="text" id="regNo" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-mono" placeholder="e.g. 610823U104XXX">
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">PIN / Password</label>
+                    <input type="password" id="pin" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Enter PIN">
+                </div>
+
+                <p id="authMsg" class="text-red-500 text-sm text-center h-5"></p>
+                
+                <button onclick="handleAuth()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition shadow-lg">
+                    <span id="submitBtnText">Login</span>
+                </button>
+                
+                <div class="text-center mt-4">
+                    <button onclick="toggleAuthMode()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition">
+                        <span id="switchText">New Student? Register Here</span>
+                    </button>
+                </div>
+                <div class="text-center mt-2">
+                    <button onclick="skipAuth()" class="text-slate-400 hover:text-slate-600 text-xs transition">Continue as Guest</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-4xl mx-auto p-4 md:p-6 pb-24">
+        <header class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 sticky top-4 z-40">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-calculator text-indigo-600"></i> CGPA Calculator
+                    </h1>
+                    <p class="text-slate-500 text-sm">Anna University • B.E. CSE (R2023)</p>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div class="text-right">
+                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current CGPA</p>
+                        <p class="text-3xl md:text-4xl font-extrabold text-indigo-600" id="finalCGPA">0.00</p>
+                    </div>
+                    <div class="border-l pl-6 hidden md:block">
+                        <div id="userInfoDisplay" class="font-medium text-slate-700 mb-2">Guest</div>
+                        <div class="flex gap-2">
+                            <button onclick="saveData()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3 py-1.5 rounded transition">Save</button>
+                            <button onclick="logout()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs px-3 py-1.5 rounded transition">Logout</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <div id="semesters-wrapper" class="space-y-4"></div>
+    </div>
+
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3">
+        <i class="fa-solid fa-circle-check text-green-400"></i>
+        <span id="toastMsg">Action Successful</span>
+    </div>
+
+<script>
+    const API_URL = ''; 
+    const gradePoints = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'U': 0, 'SA': 0, 'W': 0 };
+    
+    // --- Curriculum Data ---
+    const defaultCurriculum = [
+        { name: "Semester 1", active: true, subjects: [ { code: "PUCC1HM01", name: "Prof English - I", credit: 2, grade: "" }, { code: "PUCC1BS01", name: "Matrices & Calculus", credit: 4, grade: "" }, { code: "PUCC1BS02", name: "Engg Physics", credit: 3, grade: "" }, { code: "PUCC1BS03", name: "Engg Chemistry", credit: 3, grade: "" }, { code: "PUCC1BE01", name: "Engg Graphics", credit: 4, grade: "" }, { code: "PUCC1HM02", name: "Heritage Tamils", credit: 1, grade: "" }, { code: "PUCC1PL01", name: "Prof Eng Lab - I", credit: 2, grade: "" }, { code: "PUCC1PL02", name: "Phy & Chem Lab", credit: 2, grade: "" }, { code: "PUCC1HM03", name: "Wellness", credit: 0, grade: "" } ] },
+        { name: "Semester 2", active: true, subjects: [ { code: "PUCC2HM04", name: "Prof English - II", credit: 2, grade: "" }, { code: "PUCC2BS04", name: "Stats & Numerical", credit: 4, grade: "" }, { code: "PUCS2BS05", name: "Phy for Info Sci", credit: 3, grade: "" }, { code: "PUCC2BE02", name: "Basic EEE", credit: 3, grade: "" }, { code: "PUCS2BE03", name: "Fund Computer Sci", credit: 3, grade: "" }, { code: "PUCC2BE04", name: "Python Prog", credit: 2, grade: "" }, { code: "PUCC2HM05", name: "Tamils Tech", credit: 1, grade: "" }, { code: "PUCC2PL03", name: "Prof Eng Lab - II", credit: 2, grade: "" }, { code: "PUCC2PL04", name: "Python Lab", credit: 2, grade: "" }, { code: "PUCC2PL05", name: "Civil/Mech Lab", credit: 1, grade: "" }, { code: "PUCC2PL06", name: "EEE Lab", credit: 1, grade: "" }, { code: "PUCC2HM06", name: "Wellness", credit: 0, grade: "" } ] },
+        { name: "Semester 3", active: true, subjects: [ { code: "PUCS3BS06", name: "Maths for CSE", credit: 4, grade: "" }, { code: "PUCS3PC01", name: "Comp Org & Arch", credit: 4, grade: "" }, { code: "PUCS3PC02", name: "Foundations of DS", credit: 3, grade: "" }, { code: "PUCS3PC03", name: "Data Struct & Algo", credit: 4, grade: "" }, { code: "PUCS3PC04", name: "OOP", credit: 3, grade: "" }, { code: "PUCC3MCXX", name: "Mandatory Course I", credit: 0, grade: "" }, { code: "PUCS3PL01", name: "Data Science Lab", credit: 2, grade: "" }, { code: "PUCS3PL02", name: "OOP Lab", credit: 2, grade: "" }, { code: "PUCC3HM07", name: "Ext Activities", credit: 0, grade: "" } ] },
+        { name: "Semester 4", active: true, subjects: [ { code: "PUCC4BS07", name: "Env Sci & Sust", credit: 3, grade: "" }, { code: "PUIT4PC02", name: "Operating Systems", credit: 3, grade: "" }, { code: "PUAD4PC01", name: "AI & ML", credit: 3, grade: "" }, { code: "PUIT4PC03", name: "DBMS", credit: 3, grade: "" }, { code: "PUCS4PC05", name: "Software Eng", credit: 3, grade: "" }, { code: "PUCC4MCXX", name: "Mandatory Course II", credit: 0, grade: "" }, { code: "PUIT4PL01", name: "OS Lab", credit: 2, grade: "" }, { code: "PUIT4PL02", name: "DBMS Lab", credit: 2, grade: "" }, { code: "PUAD4PL01", name: "AI & ML Lab", credit: 2, grade: "" }, { code: "PUCC4HM08", name: "Ext Activities", credit: 0, grade: "" } ] },
+        { name: "Semester 5", active: true, subjects: [ { code: "PUCC5HM10", name: "Values & Ethics", credit: 3, grade: "" }, { code: "PUCS5PC06", name: "Comp Networks", credit: 3, grade: "" }, { code: "PUCS5PC07", name: "Theory of Comp", credit: 4, grade: "" }, { code: "PUCS5PEXX", name: "Prof Elective I", credit: 3, grade: "" }, { code: "PUCS5PEXX", name: "Prof Elective II", credit: 3, grade: "" }, { code: "PUCS5IL01", name: "Industry Lecture", credit: 0, grade: "" }, { code: "PUCS5PL03", name: "Networks Lab", credit: 2, grade: "" }, { code: "PUCS5PL04", name: "SE Lab", credit: 2, grade: "" }, { code: "PUCC5PD01", name: "Prof Dev", credit: 1, grade: "" } ] },
+        { name: "Semester 6", active: false, subjects: [ { code: "PUCS6PC08", name: "Compiler Design", credit: 4, grade: "" }, { code: "PUCS5PEXX", name: "Prof Elective III", credit: 3, grade: "" }, { code: "PUCS5PEXX", name: "Prof Elective IV", credit: 3, grade: "" }, { code: "OPEN", name: "Open Elective I", credit: 3, grade: "" }, { code: "OPEN", name: "Open Elective II", credit: 3, grade: "" }, { code: "PUCS5IL02", name: "Industry Lecture", credit: 0, grade: "" }, { code: "PUCS3PL05", name: "Compiler Lab", credit: 2, grade: "" }, { code: "PUCS3PL06", name: "IOT Lab", credit: 2, grade: "" }, { code: "PUCS6VA0", name: "Tech Skill Dev", credit: 1, grade: "" }, { code: "PUCC6PD0", name: "Prof Dev", credit: 1, grade: "" } ] },
+        { name: "Semester 7", active: false, subjects: [ { code: "PUCS7PC09", name: "Cyber Security", credit: 4, grade: "" }, { code: "PE", name: "Prof Elective V", credit: 3, grade: "" }, { code: "PE", name: "Prof Elective VI", credit: 3, grade: "" }, { code: "OE", name: "Open Elective III", credit: 3, grade: "" }, { code: "OE", name: "Open Elective IV", credit: 3, grade: "" }, { code: "PUCS7PL07", name: "Security Lab", credit: 2, grade: "" }, { code: "PUCC7VA02", name: "Tech Skill Dev", credit: 1, grade: "" }, { code: "PUCS7PR01", name: "Project Phase I", credit: 1, grade: "" } ] },
+        { name: "Semester 8", active: false, subjects: [ { code: "PUCS7PR02", name: "Project Phase II", credit: 10, grade: "" } ] }
+    ];
+
+    let myCurriculum = JSON.parse(JSON.stringify(defaultCurriculum));
+    let currentUser = null;
+    let isLoginMode = true;
+
+    function toggleAuthMode() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('authTitle').innerText = isLoginMode ? 'Student Login' : 'Student Registration';
+        document.getElementById('submitBtnText').innerText = isLoginMode ? 'Login' : 'Register';
+        document.getElementById('switchText').innerText = isLoginMode ? 'New Student? Register Here' : 'Already have an account? Login';
+        document.getElementById('authMsg').innerText = '';
+        
+        // Toggle Name field
+        const nameField = document.getElementById('nameField');
+        if (isLoginMode) nameField.classList.add('hidden');
+        else nameField.classList.remove('hidden');
+    }
+
+    function skipAuth() {
+        document.getElementById('authOverlay').classList.add('hidden');
+        renderApp();
+    }
+
+    async function handleAuth() {
+        const regNo = document.getElementById('regNo').value;
+        const pin = document.getElementById('pin').value;
+        const name = document.getElementById('name').value;
+        
+        if (!regNo || !pin) return showToast('Reg No & PIN required', true);
+        if (!isLoginMode && !name) return showToast('Name is required', true);
+
+        const btn = document.querySelector('#authOverlay button');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+
+        const payload = isLoginMode 
+            ? { register_number: regNo, pin: pin }
+            : { register_number: regNo, pin: pin, name: name };
+
+        try {
+            const res = await fetch(API_URL + (isLoginMode ? '/login' : '/register'), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            
+            if (data.success) {
+                currentUser = { id: data.userId, name: data.name, regNo: data.register_number };
+                document.getElementById('userInfoDisplay').innerText = `Hi, ${currentUser.name}`;
+                document.getElementById('authOverlay').classList.add('hidden');
+                loadData();
+            } else {
+                document.getElementById('authMsg').innerText = data.message;
+            }
+        } catch (e) {
+            document.getElementById('authMsg').innerText = "Connection Failed";
+        }
+        btn.disabled = false;
+        btn.innerHTML = `<span id="submitBtnText">${isLoginMode ? 'Login' : 'Register'}</span>`;
+    }
+
+    async function saveData() {
+        if(!currentUser) return showToast("Login required to save", true);
+        updateCurriculumFromDOM();
+        try {
+            const res = await fetch(API_URL + '/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: currentUser.id, data: myCurriculum })
+            });
+            const data = await res.json();
+            if(data.success) showToast("Data Saved Successfully");
+        } catch(e) { showToast("Save Failed", true); }
+    }
+
+    async function loadData() {
+        if(!currentUser) return;
+        try {
+            const res = await fetch(API_URL + `/load/${currentUser.id}`);
+            const data = await res.json();
+            if (data.success && data.data) {
+                myCurriculum = data.data;
+                renderApp();
+                calculateAll();
+            } else { renderApp(); }
+        } catch(e) {}
+    }
+
+    function updateCurriculumFromDOM() {
+         myCurriculum.forEach((sem, sIdx) => {
+            sem.active = document.getElementById(`check-${sIdx}`).checked;
+            sem.subjects.forEach((sub, subIdx) => {
+                const gradeEl = document.getElementById(`grade-${sIdx}-${subIdx}`);
+                const credEl = document.getElementById(`credit-${sIdx}-${subIdx}`);
+                if(gradeEl && credEl) {
+                    sub.grade = gradeEl.value;
+                    sub.credit = parseFloat(credEl.value);
+                }
+            });
+        });
+    }
+
+    function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+        const icon = toast.querySelector('i');
+        toastMsg.innerText = msg;
+        icon.className = isError ? "fa-solid fa-circle-exclamation text-red-400" : "fa-solid fa-circle-check text-green-400";
+        toast.classList.remove('translate-y-20', 'opacity-0');
+        setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+    }
+
+    function logout() { location.reload(); }
+
+    function renderApp() {
+        const wrapper = document.getElementById('semesters-wrapper');
+        wrapper.innerHTML = '';
+        
+        myCurriculum.forEach((sem, sIdx) => {
+            const semCard = document.createElement('div');
+            semCard.className = 'semester-card bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden';
+            semCard.innerHTML = `
+                <div class="semester-header p-4 bg-white hover:bg-slate-50 cursor-pointer flex justify-between items-center transition" onclick="toggleAccordion(${sIdx})">
+                    <div class="flex items-center gap-3">
+                         <div class="checkbox-wrapper" onclick="event.stopPropagation()">
+                            <input type="checkbox" id="check-${sIdx}" ${sem.active ? 'checked' : ''} class="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" onchange="calculateAll()">
+                        </div>
+                        <h3 class="font-bold text-slate-700">${sem.name}</h3>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <span id="sgpa-${sIdx}" class="text-xs font-bold px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">SGPA: 0.00</span>
+                        <i id="icon-${sIdx}" class="fa-solid fa-chevron-down text-slate-400 text-sm transition-transform duration-300"></i>
+                    </div>
+                </div>
+                <div id="content-${sIdx}" class="accordion-content bg-slate-50 border-t border-slate-100">
+                    <div class="p-4 space-y-3" id="sub-container-${sIdx}"></div>
+                </div>
+            `;
+            wrapper.appendChild(semCard);
+            const subContainer = document.getElementById(`sub-container-${sIdx}`);
+            sem.subjects.forEach((sub, subIdx) => {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-12 gap-3 items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm';
+                const options = Object.keys(gradePoints).map(g => `<option value="${g}" ${sub.grade === g ? 'selected' : ''}>${g}</option>`).join('');
+                row.innerHTML = `
+                    <div class="col-span-12 md:col-span-6">
+                        <p class="font-semibold text-sm text-slate-800">${sub.name}</p>
+                        <p class="text-xs text-slate-400 font-mono">${sub.code}</p>
+                    </div>
+                    <div class="col-span-6 md:col-span-3">
+                        <select id="grade-${sIdx}-${subIdx}" onchange="calculateAll()" class="w-full text-sm border-slate-300 rounded-md py-1.5 px-2 bg-slate-50">
+                            <option value="">Grade</option> ${options}
+                        </select>
+                    </div>
+                    <div class="col-span-6 md:col-span-3 flex items-center gap-2">
+                        <span class="text-xs text-slate-400">Cr:</span>
+                        <input type="number" id="credit-${sIdx}-${subIdx}" value="${sub.credit}" onchange="calculateAll()" step="0.5" class="w-full text-sm border-slate-300 rounded-md py-1.5 px-2 bg-slate-50 text-center">
+                    </div>
+                `;
+                subContainer.appendChild(row);
+            });
+        });
+    }
+
+    function toggleAccordion(idx) {
+        const content = document.getElementById(`content-${idx}`);
+        const icon = document.getElementById(`icon-${idx}`);
+        if (content.classList.contains('open')) {
+            content.classList.remove('open');
+            icon.style.transform = 'rotate(0deg)';
+        } else {
+            content.classList.add('open');
+            icon.style.transform = 'rotate(180deg)';
+        }
+    }
+
+    function calculateAll() {
+        updateCurriculumFromDOM();
+        let totalPoints = 0, totalCredits = 0;
+        myCurriculum.forEach((sem, sIdx) => {
+            let semPoints = 0, semCredits = 0;
+            const isActive = document.getElementById(`check-${sIdx}`).checked;
+            sem.subjects.forEach((sub) => {
+                if (sub.grade && sub.credit > 0) {
+                    semPoints += (gradePoints[sub.grade] * sub.credit);
+                    semCredits += sub.credit;
+                }
+            });
+            const sgpa = semCredits > 0 ? (semPoints / semCredits).toFixed(2) : "0.00";
+            document.getElementById(`sgpa-${sIdx}`).innerText = `SGPA: ${sgpa}`;
+            if (isActive && semCredits > 0) {
+                totalPoints += semPoints;
+                totalCredits += semCredits;
+            }
+        });
+        document.getElementById('finalCGPA').innerText = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
+    }
+</script>
+</body>
+</html>
