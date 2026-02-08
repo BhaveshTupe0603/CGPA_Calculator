@@ -2,101 +2,126 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>CGPA Calculator | B.E CSE R2023</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
-        body { font-family: 'Inter', sans-serif; }
-        .accordion-content { transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out; max-height: 0; opacity: 0; overflow: hidden; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        /* Smooth Accordion */
+        .accordion-content { transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease; max-height: 0; opacity: 0; overflow: hidden; }
         .accordion-content.open { max-height: 2000px; opacity: 1; }
+        
+        /* Remove arrows from number input */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        /* Custom Scrollbar for better mobile feel */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen">
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-10">
 
-    <div id="authOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md border border-slate-100">
+    <div id="authOverlay" class="fixed inset-0 bg-slate-900/90 backdrop-blur-sm flex items-end md:items-center justify-center z-50 transition-opacity p-4 sm:p-0">
+        <div class="bg-white p-6 rounded-t-2xl md:rounded-2xl shadow-2xl w-full max-w-md border border-slate-100 animate-slide-up md:animate-none">
             <div class="text-center mb-6">
-                <div class="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-600 text-2xl">
-                    <i class="fa-solid fa-university"></i>
+                <div class="bg-indigo-50 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3 text-indigo-600 text-xl">
+                    <i class="fa-solid fa-user-graduate"></i>
                 </div>
-                <h2 id="authTitle" class="text-2xl font-bold text-slate-800">Student Login</h2>
-                <p class="text-slate-500 text-sm mt-1">Enter your details to continue</p>
+                <h2 id="authTitle" class="text-xl font-bold text-slate-800">Student Login</h2>
+                <p class="text-slate-500 text-sm">Enter your Register No. & PIN</p>
             </div>
             
-            <div class="space-y-4">
+            <div class="space-y-3">
                 <div id="nameField" class="hidden">
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Full Name</label>
-                    <input type="text" id="name" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="e.g. John Doe">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Full Name</label>
+                    <input type="text" id="name" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition" placeholder="e.g. John Doe">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Register Number</label>
-                    <input type="text" id="regNo" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none font-mono" placeholder="e.g. 610823U104XXX">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">Register Number</label>
+                    <input type="text" id="regNo" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-mono tracking-wide" placeholder="610823U104XXX">
                 </div>
                 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">PIN / Password</label>
-                    <input type="password" id="pin" class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="Enter PIN">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wide ml-1">PIN</label>
+                    <input type="password" id="pin" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="••••••">
                 </div>
 
-                <p id="authMsg" class="text-red-500 text-sm text-center h-5"></p>
+                <p id="authMsg" class="text-red-500 text-xs text-center h-4 font-medium"></p>
                 
-                <button onclick="handleAuth()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition shadow-lg">
+                <button onclick="handleAuth()" class="w-full bg-indigo-600 active:bg-indigo-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-indigo-200 flex justify-center items-center gap-2">
                     <span id="submitBtnText">Login</span>
                 </button>
                 
-                <div class="text-center mt-4">
-                    <button onclick="toggleAuthMode()" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium transition">
+                <div class="flex flex-col gap-3 mt-4 text-center">
+                    <button onclick="toggleAuthMode()" class="text-indigo-600 font-semibold text-sm py-2">
                         <span id="switchText">New Student? Register Here</span>
                     </button>
-                </div>
-                <div class="text-center mt-2">
-                    <button onclick="skipAuth()" class="text-slate-400 hover:text-slate-600 text-xs transition">Continue as Guest</button>
+                    <button onclick="skipAuth()" class="text-slate-400 text-xs font-medium">Continue as Guest</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="max-w-4xl mx-auto p-4 md:p-6 pb-24">
-        <header class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6 sticky top-4 z-40">
+    <div class="max-w-3xl mx-auto px-4 py-4 md:py-8">
+        
+        <header class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-5 sticky top-2 z-30 transition-all duration-300" id="mainHeader">
             <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                <div>
-                    <h1 class="text-xl md:text-2xl font-bold text-slate-800 flex items-center gap-2">
-                        <i class="fa-solid fa-calculator text-indigo-600"></i> CGPA Calculator
-                    </h1>
-                    <p class="text-slate-500 text-sm">Anna University • B.E. CSE (R2023)</p>
-                </div>
-                <div class="flex items-center gap-6">
-                    <div class="text-right">
-                        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current CGPA</p>
-                        <p class="text-3xl md:text-4xl font-extrabold text-indigo-600" id="finalCGPA">0.00</p>
+                
+                <div class="w-full md:w-auto flex justify-between items-center">
+                    <div>
+                        <h1 class="text-xl font-extrabold text-slate-800 tracking-tight">CGPA Calc</h1>
+                        <p class="text-slate-500 text-xs font-medium">Anna Univ • B.E. CSE (R2023)</p>
                     </div>
-                    <div class="border-l pl-6 hidden md:block">
-                        <div id="userInfoDisplay" class="font-medium text-slate-700 mb-2">Guest</div>
+                    <div class="md:hidden">
+                        <div class="bg-indigo-50 text-indigo-600 rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold shadow-sm border border-indigo-100" id="mobileUserInitials">G</div>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-auto bg-slate-50 md:bg-transparent rounded-xl p-3 md:p-0 flex items-center justify-between gap-6">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">CGPA</span>
+                        <span class="text-3xl font-black text-indigo-600 leading-none" id="finalCGPA">0.00</span>
+                    </div>
+
+                    <div class="hidden md:flex flex-col items-end border-l border-slate-200 pl-4">
+                        <span id="userInfoDisplay" class="text-sm font-bold text-slate-700 mb-1">Guest</span>
                         <div class="flex gap-2">
-                            <button onclick="saveData()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs px-3 py-1.5 rounded transition">Save</button>
-                            <button onclick="logout()" class="bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs px-3 py-1.5 rounded transition">Logout</button>
+                            <button onclick="saveData()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">Save</button>
+                            <button onclick="logout()" class="border border-slate-300 hover:bg-slate-50 text-slate-600 text-xs font-bold px-3 py-1.5 rounded-lg transition">Exit</button>
                         </div>
+                    </div>
+
+                    <div class="flex md:hidden gap-2">
+                        <button onclick="saveData()" class="bg-indigo-600 active:bg-indigo-700 text-white w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                        </button>
+                        <button onclick="logout()" class="bg-white border border-slate-200 text-slate-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-sm transition">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <div id="semesters-wrapper" class="space-y-4"></div>
+        <div id="semesters-wrapper" class="space-y-3"></div>
+
     </div>
 
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-xl transform translate-y-20 opacity-0 transition-all duration-300 flex items-center gap-3">
-        <i class="fa-solid fa-circle-check text-green-400"></i>
-        <span id="toastMsg">Action Successful</span>
+    <div id="toast" class="fixed top-5 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 z-50 transition-all duration-300 opacity-0 -translate-y-20 w-11/12 md:w-auto max-w-sm justify-center">
+        <i class="fa-solid fa-circle-check text-green-400 text-lg"></i>
+        <span id="toastMsg" class="font-medium text-sm">Saved Successfully</span>
     </div>
 
 <script>
     const API_URL = ''; 
     const gradePoints = { 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'U': 0, 'SA': 0, 'W': 0 };
     
-    // --- Curriculum Data ---
     const defaultCurriculum = [
         { name: "Semester 1", active: true, subjects: [ { code: "PUCC1HM01", name: "Prof English - I", credit: 2, grade: "" }, { code: "PUCC1BS01", name: "Matrices & Calculus", credit: 4, grade: "" }, { code: "PUCC1BS02", name: "Engg Physics", credit: 3, grade: "" }, { code: "PUCC1BS03", name: "Engg Chemistry", credit: 3, grade: "" }, { code: "PUCC1BE01", name: "Engg Graphics", credit: 4, grade: "" }, { code: "PUCC1HM02", name: "Heritage Tamils", credit: 1, grade: "" }, { code: "PUCC1PL01", name: "Prof Eng Lab - I", credit: 2, grade: "" }, { code: "PUCC1PL02", name: "Phy & Chem Lab", credit: 2, grade: "" }, { code: "PUCC1HM03", name: "Wellness", credit: 0, grade: "" } ] },
         { name: "Semester 2", active: true, subjects: [ { code: "PUCC2HM04", name: "Prof English - II", credit: 2, grade: "" }, { code: "PUCC2BS04", name: "Stats & Numerical", credit: 4, grade: "" }, { code: "PUCS2BS05", name: "Phy for Info Sci", credit: 3, grade: "" }, { code: "PUCC2BE02", name: "Basic EEE", credit: 3, grade: "" }, { code: "PUCS2BE03", name: "Fund Computer Sci", credit: 3, grade: "" }, { code: "PUCC2BE04", name: "Python Prog", credit: 2, grade: "" }, { code: "PUCC2HM05", name: "Tamils Tech", credit: 1, grade: "" }, { code: "PUCC2PL03", name: "Prof Eng Lab - II", credit: 2, grade: "" }, { code: "PUCC2PL04", name: "Python Lab", credit: 2, grade: "" }, { code: "PUCC2PL05", name: "Civil/Mech Lab", credit: 1, grade: "" }, { code: "PUCC2PL06", name: "EEE Lab", credit: 1, grade: "" }, { code: "PUCC2HM06", name: "Wellness", credit: 0, grade: "" } ] },
@@ -112,17 +137,14 @@
     let currentUser = null;
     let isLoginMode = true;
 
+    // --- Core Functions ---
     function toggleAuthMode() {
         isLoginMode = !isLoginMode;
-        document.getElementById('authTitle').innerText = isLoginMode ? 'Student Login' : 'Student Registration';
-        document.getElementById('submitBtnText').innerText = isLoginMode ? 'Login' : 'Register';
-        document.getElementById('switchText').innerText = isLoginMode ? 'New Student? Register Here' : 'Already have an account? Login';
+        document.getElementById('authTitle').innerText = isLoginMode ? 'Student Login' : 'New Account';
+        document.getElementById('submitBtnText').innerText = isLoginMode ? 'Login' : 'Create Account';
+        document.getElementById('switchText').innerText = isLoginMode ? 'New Student? Register Here' : 'Has Account? Login';
         document.getElementById('authMsg').innerText = '';
-        
-        // Toggle Name field
-        const nameField = document.getElementById('nameField');
-        if (isLoginMode) nameField.classList.add('hidden');
-        else nameField.classList.remove('hidden');
+        document.getElementById('nameField').classList.toggle('hidden', isLoginMode);
     }
 
     function skipAuth() {
@@ -131,32 +153,29 @@
     }
 
     async function handleAuth() {
-        const regNo = document.getElementById('regNo').value;
-        const pin = document.getElementById('pin').value;
-        const name = document.getElementById('name').value;
+        const regNo = document.getElementById('regNo').value.trim();
+        const pin = document.getElementById('pin').value.trim();
+        const name = document.getElementById('name').value.trim();
         
-        if (!regNo || !pin) return showToast('Reg No & PIN required', true);
-        if (!isLoginMode && !name) return showToast('Name is required', true);
+        if (!regNo || !pin) return showToast('Enter Reg No & PIN', true);
+        if (!isLoginMode && !name) return showToast('Enter Name', true);
 
         const btn = document.querySelector('#authOverlay button');
+        const originalText = btn.innerHTML;
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-        const payload = isLoginMode 
-            ? { register_number: regNo, pin: pin }
-            : { register_number: regNo, pin: pin, name: name };
+        btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
 
         try {
             const res = await fetch(API_URL + (isLoginMode ? '/login' : '/register'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(isLoginMode ? { register_number: regNo, pin } : { register_number: regNo, pin, name })
             });
             const data = await res.json();
             
             if (data.success) {
                 currentUser = { id: data.userId, name: data.name, regNo: data.register_number };
-                document.getElementById('userInfoDisplay').innerText = `Hi, ${currentUser.name}`;
+                updateUIForUser();
                 document.getElementById('authOverlay').classList.add('hidden');
                 loadData();
             } else {
@@ -166,20 +185,26 @@
             document.getElementById('authMsg').innerText = "Connection Failed";
         }
         btn.disabled = false;
-        btn.innerHTML = `<span id="submitBtnText">${isLoginMode ? 'Login' : 'Register'}</span>`;
+        btn.innerHTML = originalText;
+    }
+
+    function updateUIForUser() {
+        if(currentUser) {
+            document.getElementById('userInfoDisplay').innerText = currentUser.name.split(' ')[0];
+            document.getElementById('mobileUserInitials').innerText = currentUser.name.charAt(0);
+        }
     }
 
     async function saveData() {
-        if(!currentUser) return showToast("Login required to save", true);
-        updateCurriculumFromDOM();
+        if(!currentUser) return showToast("Login to save!", true);
+        updateDataFromDOM();
         try {
-            const res = await fetch(API_URL + '/save', {
+            await fetch(API_URL + '/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId: currentUser.id, data: myCurriculum })
             });
-            const data = await res.json();
-            if(data.success) showToast("Data Saved Successfully");
+            showToast("Saved Successfully");
         } catch(e) { showToast("Save Failed", true); }
     }
 
@@ -196,114 +221,123 @@
         } catch(e) {}
     }
 
-    function updateCurriculumFromDOM() {
+    function updateDataFromDOM() {
          myCurriculum.forEach((sem, sIdx) => {
             sem.active = document.getElementById(`check-${sIdx}`).checked;
             sem.subjects.forEach((sub, subIdx) => {
-                const gradeEl = document.getElementById(`grade-${sIdx}-${subIdx}`);
-                const credEl = document.getElementById(`credit-${sIdx}-${subIdx}`);
-                if(gradeEl && credEl) {
-                    sub.grade = gradeEl.value;
-                    sub.credit = parseFloat(credEl.value);
-                }
+                const g = document.getElementById(`grade-${sIdx}-${subIdx}`);
+                const c = document.getElementById(`credit-${sIdx}-${subIdx}`);
+                if(g && c) { sub.grade = g.value; sub.credit = parseFloat(c.value); }
             });
         });
     }
 
     function showToast(msg, isError = false) {
-        const toast = document.getElementById('toast');
-        const toastMsg = document.getElementById('toastMsg');
-        const icon = toast.querySelector('i');
-        toastMsg.innerText = msg;
-        icon.className = isError ? "fa-solid fa-circle-exclamation text-red-400" : "fa-solid fa-circle-check text-green-400";
-        toast.classList.remove('translate-y-20', 'opacity-0');
-        setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+        const t = document.getElementById('toast');
+        document.getElementById('toastMsg').innerText = msg;
+        t.querySelector('i').className = isError ? "fa-solid fa-circle-exclamation text-red-400" : "fa-solid fa-circle-check text-green-400";
+        t.classList.remove('opacity-0', '-translate-y-20');
+        setTimeout(() => t.classList.add('opacity-0', '-translate-y-20'), 3000);
     }
 
     function logout() { location.reload(); }
 
     function renderApp() {
-        const wrapper = document.getElementById('semesters-wrapper');
-        wrapper.innerHTML = '';
+        const w = document.getElementById('semesters-wrapper');
+        w.innerHTML = '';
         
         myCurriculum.forEach((sem, sIdx) => {
-            const semCard = document.createElement('div');
-            semCard.className = 'semester-card bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden';
-            semCard.innerHTML = `
-                <div class="semester-header p-4 bg-white hover:bg-slate-50 cursor-pointer flex justify-between items-center transition" onclick="toggleAccordion(${sIdx})">
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden';
+            
+            // Mobile-Optimized Header
+            card.innerHTML = `
+                <div class="p-4 flex items-center justify-between cursor-pointer active:bg-slate-50 transition" onclick="toggleAccordion(${sIdx})">
                     <div class="flex items-center gap-3">
-                         <div class="checkbox-wrapper" onclick="event.stopPropagation()">
-                            <input type="checkbox" id="check-${sIdx}" ${sem.active ? 'checked' : ''} class="w-5 h-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" onchange="calculateAll()">
+                        <div class="relative flex items-center" onclick="event.stopPropagation()">
+                             <input type="checkbox" id="check-${sIdx}" ${sem.active ? 'checked' : ''} 
+                                class="peer h-6 w-6 cursor-pointer appearance-none rounded-lg border-2 border-slate-300 transition-all checked:border-indigo-600 checked:bg-indigo-600" 
+                                onchange="calculateAll()">
+                            <i class="fa-solid fa-check absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white text-xs opacity-0 peer-checked:opacity-100 pointer-events-none"></i>
                         </div>
-                        <h3 class="font-bold text-slate-700">${sem.name}</h3>
+                        <span class="font-bold text-slate-700 text-sm md:text-base">${sem.name}</span>
                     </div>
-                    <div class="flex items-center gap-4">
-                        <span id="sgpa-${sIdx}" class="text-xs font-bold px-3 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">SGPA: 0.00</span>
-                        <i id="icon-${sIdx}" class="fa-solid fa-chevron-down text-slate-400 text-sm transition-transform duration-300"></i>
+                    <div class="flex items-center gap-3">
+                        <span id="sgpa-${sIdx}" class="text-xs font-bold bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg border border-indigo-100 min-w-[4rem] text-center">0.00</span>
+                        <i id="icon-${sIdx}" class="fa-solid fa-chevron-down text-slate-300 text-sm transition-transform duration-300"></i>
                     </div>
                 </div>
-                <div id="content-${sIdx}" class="accordion-content bg-slate-50 border-t border-slate-100">
-                    <div class="p-4 space-y-3" id="sub-container-${sIdx}"></div>
+                <div id="content-${sIdx}" class="accordion-content border-t border-slate-100 bg-slate-50/50">
+                    <div class="p-3 space-y-3" id="sub-container-${sIdx}"></div>
                 </div>
             `;
-            wrapper.appendChild(semCard);
-            const subContainer = document.getElementById(`sub-container-${sIdx}`);
+            w.appendChild(card);
+            
+            const subC = document.getElementById(`sub-container-${sIdx}`);
             sem.subjects.forEach((sub, subIdx) => {
                 const row = document.createElement('div');
-                row.className = 'grid grid-cols-12 gap-3 items-center bg-white p-3 rounded-lg border border-slate-200 shadow-sm';
-                const options = Object.keys(gradePoints).map(g => `<option value="${g}" ${sub.grade === g ? 'selected' : ''}>${g}</option>`).join('');
+                // Mobile: Stacked | Desktop: Grid
+                row.className = 'bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center gap-3 md:gap-4';
+                
+                const opts = Object.keys(gradePoints).map(g => `<option value="${g}" ${sub.grade === g ? 'selected' : ''}>${g}</option>`).join('');
+                
                 row.innerHTML = `
-                    <div class="col-span-12 md:col-span-6">
-                        <p class="font-semibold text-sm text-slate-800">${sub.name}</p>
-                        <p class="text-xs text-slate-400 font-mono">${sub.code}</p>
+                    <div class="flex-1">
+                        <p class="text-sm font-semibold text-slate-800 leading-tight">${sub.name}</p>
+                        <p class="text-[10px] text-slate-400 font-mono mt-0.5">${sub.code}</p>
                     </div>
-                    <div class="col-span-6 md:col-span-3">
-                        <select id="grade-${sIdx}-${subIdx}" onchange="calculateAll()" class="w-full text-sm border-slate-300 rounded-md py-1.5 px-2 bg-slate-50">
-                            <option value="">Grade</option> ${options}
-                        </select>
-                    </div>
-                    <div class="col-span-6 md:col-span-3 flex items-center gap-2">
-                        <span class="text-xs text-slate-400">Cr:</span>
-                        <input type="number" id="credit-${sIdx}-${subIdx}" value="${sub.credit}" onchange="calculateAll()" step="0.5" class="w-full text-sm border-slate-300 rounded-md py-1.5 px-2 bg-slate-50 text-center">
+                    
+                    <div class="flex gap-2">
+                        <div class="w-1/2 md:w-24">
+                            <select id="grade-${sIdx}-${subIdx}" onchange="calculateAll()" 
+                                class="w-full text-sm font-medium border border-slate-300 rounded-lg py-2 px-2 bg-slate-50 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none">
+                                <option value="">-</option>${opts}
+                            </select>
+                        </div>
+                        <div class="w-1/2 md:w-20 relative">
+                             <input type="number" id="credit-${sIdx}-${subIdx}" value="${sub.credit}" onchange="calculateAll()" step="0.5" 
+                                class="w-full text-sm font-medium border border-slate-300 rounded-lg py-2 px-2 pl-8 bg-slate-50 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none">
+                             <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400">Cr</span>
+                        </div>
                     </div>
                 `;
-                subContainer.appendChild(row);
+                subC.appendChild(row);
             });
         });
     }
 
     function toggleAccordion(idx) {
-        const content = document.getElementById(`content-${idx}`);
-        const icon = document.getElementById(`icon-${idx}`);
-        if (content.classList.contains('open')) {
-            content.classList.remove('open');
-            icon.style.transform = 'rotate(0deg)';
+        const c = document.getElementById(`content-${idx}`);
+        const i = document.getElementById(`icon-${idx}`);
+        if (c.classList.contains('open')) {
+            c.classList.remove('open');
+            i.style.transform = 'rotate(0deg)';
         } else {
-            content.classList.add('open');
-            icon.style.transform = 'rotate(180deg)';
+            c.classList.add('open');
+            i.style.transform = 'rotate(180deg)';
         }
     }
 
     function calculateAll() {
-        updateCurriculumFromDOM();
-        let totalPoints = 0, totalCredits = 0;
+        updateDataFromDOM();
+        let tP = 0, tC = 0;
         myCurriculum.forEach((sem, sIdx) => {
-            let semPoints = 0, semCredits = 0;
-            const isActive = document.getElementById(`check-${sIdx}`).checked;
-            sem.subjects.forEach((sub) => {
+            let sP = 0, sC = 0;
+            const active = document.getElementById(`check-${sIdx}`).checked;
+            sem.subjects.forEach(sub => {
                 if (sub.grade && sub.credit > 0) {
-                    semPoints += (gradePoints[sub.grade] * sub.credit);
-                    semCredits += sub.credit;
+                    sP += (gradePoints[sub.grade] * sub.credit);
+                    sC += sub.credit;
                 }
             });
-            const sgpa = semCredits > 0 ? (semPoints / semCredits).toFixed(2) : "0.00";
-            document.getElementById(`sgpa-${sIdx}`).innerText = `SGPA: ${sgpa}`;
-            if (isActive && semCredits > 0) {
-                totalPoints += semPoints;
-                totalCredits += semCredits;
-            }
+            document.getElementById(`sgpa-${sIdx}`).innerText = sC > 0 ? (sP / sC).toFixed(2) : "0.00";
+            if (active && sC > 0) { tP += sP; tC += sC; }
         });
-        document.getElementById('finalCGPA').innerText = totalCredits > 0 ? (totalPoints / totalCredits).toFixed(2) : "0.00";
+        const final = tC > 0 ? (tP / tC).toFixed(2) : "0.00";
+        document.getElementById('finalCGPA').innerText = final;
+        
+        // Mobile Save Indicator (Optional)
+        // document.getElementById('saveIndicator').classList.add('animate-pulse');
     }
 </script>
 </body>
